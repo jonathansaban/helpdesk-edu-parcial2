@@ -1,8 +1,16 @@
 ﻿from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Optional
 
 from app.domain.errors import ValidationError
 from app.models.enums import Role
+
+
+@dataclass
+class HistoryEvent:
+    action: str
+    detail: str
+    created_at: datetime = field(default_factory=lambda: datetime.now().astimezone())
 
 
 @dataclass
@@ -15,6 +23,7 @@ class Ticket:
     requester_id: int
     status: str = "open"
     assignee_id: Optional[int] = None
+    history: list[HistoryEvent] = field(default_factory=list)
     _tags: list[str] = field(default_factory=list, init=False, repr=False)
 
     @property
