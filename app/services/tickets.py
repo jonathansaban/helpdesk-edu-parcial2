@@ -1,9 +1,12 @@
-from app.models.entities import Ticket
+﻿from app.domain.errors import TicketNotFoundError
+from app.models.entities import Ticket, User
 from app.models.enums import TicketStatus
+from app.services.users import UserService
 
 
 class TicketService:
-    def __init__(self) -> None:
+    def __init__(self, users: UserService | None = None) -> None:
+        self._users = users
         self._tickets: list[Ticket] = []
         self._next_id = 1
 
@@ -40,3 +43,26 @@ class TicketService:
         """Return tickets with a specific status."""
         status_value = status.value if isinstance(status, TicketStatus) else status
         return [t for t in self._tickets if t.status == status_value]
+
+    def require(self, ticket_id: int) -> Ticket:
+        """Devuelve el ticket o lanza TicketNotFoundError."""
+        for ticket in self._tickets:
+            if ticket.id == ticket_id:
+                return ticket
+        raise TicketNotFoundError(f"Ticket {ticket_id} no encontrado")
+
+    def watchers(self, ticket_id: int) -> list[User]:
+        """Solicitante y tecnico asignado (si existe), sin repetir ids."""
+        ticket = self.require(ticket_id)
+        ids = [ticket.requester_id]
+        if ticket.assignee_id is not None:
+            ids.append(ticket.assignee_id)
+
+        result: list[User] = []
+        seen: set[int] = set()
+        for user_id in ids:
+            if user_id in seen:
+                continue
+            seen.add(user_id)
+            result.append(self._users.require(user_id))
+        return result

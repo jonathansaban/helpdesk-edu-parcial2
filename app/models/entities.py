@@ -2,6 +2,7 @@
 from typing import Optional
 
 from app.domain.errors import ValidationError
+from app.models.enums import Role
 
 
 @dataclass
@@ -28,3 +29,10 @@ class Ticket:
             raise ValidationError("La etiqueta no puede estar vacia")
         if clean not in self._tags:
             self._tags.append(clean)
+
+
+@dataclass
+class User:
+    id: int
+    name: str
+    role: Role
