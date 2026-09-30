@@ -1,5 +1,5 @@
 ﻿from app.domain.errors import TicketNotFoundError
-from app.models.entities import Ticket
+from app.models.entities import Ticket, User
 from app.models.enums import TicketStatus
 from app.services.users import UserService
 
@@ -50,3 +50,19 @@ class TicketService:
             if ticket.id == ticket_id:
                 return ticket
         raise TicketNotFoundError(f"Ticket {ticket_id} no encontrado")
+
+    def watchers(self, ticket_id: int) -> list[User]:
+        """Solicitante y tecnico asignado (si existe), sin repetir ids."""
+        ticket = self.require(ticket_id)
+        ids = [ticket.requester_id]
+        if ticket.assignee_id is not None:
+            ids.append(ticket.assignee_id)
+
+        result: list[User] = []
+        seen: set[int] = set()
+        for user_id in ids:
+            if user_id in seen:
+                continue
+            seen.add(user_id)
+            result.append(self._users.require(user_id))
+        return result
