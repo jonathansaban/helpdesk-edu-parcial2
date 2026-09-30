@@ -16,3 +16,7 @@ class TicketNotFoundError(NotFoundError):
 
 class UserNotFoundError(NotFoundError):
     """No existe el usuario."""
+
+
+class DuplicateAssignmentError(DomainError):
+    """El ticket ya esta asignado a ese tecnico."""
