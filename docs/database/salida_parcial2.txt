@@ -1,0 +1,62 @@
+﻿SELECT t.id, t.title, t.status, u.name AS solicitante
+FROM tickets t
+JOIN users u ON u.id = t.requester_id
+WHERE t.status = 'open'
+ORDER BY t.id;
+ id |       title       | status | solicitante 
+----+-------------------+--------+-------------
+  1 | No imprime        | open   | Ana
+  2 | No ingresa al SIS | open   | Bruno
+  4 | Monitor parpadea  | open   | Bruno
+(3 rows)
+
+SELECT u.id, u.name, COUNT(t.id) AS total_tickets
+FROM users u
+LEFT JOIN tickets t ON t.assignee_id = u.id
+WHERE u.role = 'technician'
+GROUP BY u.id, u.name
+HAVING COUNT(t.id) > 0
+ORDER BY total_tickets DESC, u.id;
+ id | name  | total_tickets 
+----+-------+---------------
+  3 | Luis  |             2
+  4 | Marta |             2
+(2 rows)
+
+SELECT t.id, t.title
+FROM tickets t
+WHERE NOT EXISTS (
+    SELECT 1 FROM comments c WHERE c.ticket_id = t.id
+)
+ORDER BY t.id;
+ id |       title       
+----+-------------------
+  2 | No ingresa al SIS
+  4 | Monitor parpadea
+  5 | Acceso VPN
+(3 rows)
+
+BEGIN;
+BEGIN
+SELECT COUNT(*) AS historial_inicial FROM ticket_history WHERE ticket_id = 1;
+ historial_inicial 
+-------------------
+                 2
+(1 row)
+
+DELETE FROM tickets WHERE id = 1;
+DELETE 1
+SELECT COUNT(*) AS historial_tras_delete FROM ticket_history WHERE ticket_id = 1;
+ historial_tras_delete 
+-----------------------
+                     0
+(1 row)
+
+ROLLBACK;
+ROLLBACK
+SELECT COUNT(*) AS historial_tras_rollback FROM ticket_history WHERE ticket_id = 1;
+ historial_tras_rollback 
+-------------------------
+                       2
+(1 row)
+
