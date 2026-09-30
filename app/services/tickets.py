@@ -1,11 +1,13 @@
-﻿from app.domain.errors import TicketNotFoundError
-from app.models.entities import Ticket, User
+﻿from app.domain.errors import DuplicateAssignmentError, TicketNotFoundError
+from app.models.entities import HistoryEvent, Ticket, User
 from app.models.enums import TicketStatus
+from app.services.notifications import Notifier
 from app.services.users import UserService
 
 
 class TicketService:
-    def __init__(self, users: UserService | None = None) -> None:
+    def __init__(self, users: UserService | None = None, notifier: Notifier | None = None) -> None:
+        self._notifier = notifier
         self._users = users
         self._tickets: list[Ticket] = []
         self._next_id = 1
@@ -66,3 +68,21 @@ class TicketService:
             seen.add(user_id)
             result.append(self._users.require(user_id))
         return result
+
+    def assign(self, ticket_id: int, technician_id: int) -> Ticket:
+        """Asigna un tecnico; rechaza reasignar al mismo antes de generar efectos."""
+        ticket = self.require(ticket_id)
+        self._users.require(technician_id)
+
+        if ticket.assignee_id == technician_id:
+            raise DuplicateAssignmentError(
+                f"El ticket {ticket_id} ya esta asignado al tecnico {technician_id}"
+            )
+
+        ticket.assignee_id = technician_id
+        ticket.history.append(
+            HistoryEvent(action="assigned", detail=f"Asignado al tecnico {technician_id}")
+        )
+        if self._notifier is not None:
+            self._notifier.notify("assigned", ticket.id, technician_id)
+        return ticket
