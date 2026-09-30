@@ -1,11 +1,13 @@
-﻿from app.domain.errors import TicketNotFoundError
-from app.models.entities import Ticket, User
+﻿from app.domain.errors import DuplicateAssignmentError, TicketNotFoundError
+from app.models.entities import HistoryEvent, Ticket, User
 from app.models.enums import TicketStatus
+from app.services.notifications import Notifier
 from app.services.users import UserService
 
 
 class TicketService:
-    def __init__(self, users: UserService | None = None) -> None:
+    def __init__(self, users: UserService | None = None, notifier: Notifier | None = None) -> None:
+        self._notifier = notifier
         self._users = users
         self._tickets: list[Ticket] = []
         self._next_id = 1
